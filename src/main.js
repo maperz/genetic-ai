@@ -12,13 +12,13 @@ const scoreboard = new Scoreboard();
 init();
 
 const opacity = 0.2;
-const num_agents = 5;
 
 const characters = []
 
 // characters.push(  new CharacterController({ id: 0, scene, input: new HumanInputController() }));
 
-for (let i = 1; i < num_agents; i++) {
+const num_agents = 6;
+for (let i = 1; i <= num_agents; i++) {
   characters.push(new CharacterController({ id: i, scene, opacity, input: new RandomInputController({ prob: 0.01 }) }));
 }
 
