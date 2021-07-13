@@ -66,19 +66,8 @@ export class HumanInputController {
     }
   }
 
-  isJumpRequested() {
+  shouldJump(sensorInput) {
     return this._keys.space;
-  }
-};
-
-export class RandomInputController {
-
-  constructor(params) {
-    this._prob = params.prob ?? 0;
-  }
-
-  isJumpRequested() {
-    return Math.random() >= (1.0 - this._prob);
   }
 };
 
@@ -103,6 +92,9 @@ export class CharacterController {
 
     this._decceleration = new THREE.Vector3(-2, -2, 0);
     this._acceleration = new THREE.Vector3(1, 60, 0.0);
+    this._sensors = [];
+
+    this._headOffset = new THREE.Vector3(0, 3, 0);
 
     this._init();
     this.reset();
@@ -151,6 +143,7 @@ export class CharacterController {
 
     this._addBoundingBoxMesh();
     this._addSensorsMesh();
+
     this._model.rotation.y = Math.PI / 2;
   }
 
@@ -171,18 +164,19 @@ export class CharacterController {
   }
 
   _addSensorsMesh() {
-    var headOffset = new THREE.Vector3(0, 3, 1);
     var start = new THREE.Vector3();
-    start.addVectors(this._model.position, headOffset);
-
-    var material = new THREE.LineBasicMaterial({ color: this._color });
-    material.transparent = true;
-    material.opacity = 0.2;
+    start.addVectors(this._model.position, this._headOffset);
 
     var distance = 20;
-    var angles = [-Math.PI * 0.15, -Math.PI * 0.1, -Math.PI * 0.05, 0, Math.PI * 0.05, Math.PI * 0.1, Math.PI * 0.15];
+    var spread = 0.04;
+    var angles = [-2 * spread * Math.PI, -1 * spread * Math.PI, 0 * spread * Math.PI, 1 * spread * Math.PI, 2 * spread * Math.PI];
 
     for (let angle of angles) {
+
+      var material = new THREE.LineBasicMaterial({ color: this._color });
+      material.transparent = true;
+      material.opacity = 0.2;
+
       var direction = new THREE.Vector3(0, 0, 1);
       direction.applyAxisAngle(new THREE.Vector3(1, 0, 0), angle);
       direction.normalize();
@@ -193,7 +187,36 @@ export class CharacterController {
       var geometry = new THREE.Geometry();
       geometry.vertices.push(start);
       geometry.vertices.push(end);
-      this._model.add(new THREE.Line(geometry, material));
+
+      const sensor = new THREE.Line(geometry, material);
+      direction.normalize();
+      sensor.dir = direction;
+
+      this._model.add(sensor);
+      this._sensors.push(sensor);
+    }
+  }
+
+  _raycastFromSensor(sensor) {
+    var start = new THREE.Vector3();
+    start.addVectors(this._model.position, this._headOffset);
+
+    var dir = new THREE.Vector3();
+    dir.copy(sensor.dir);
+    dir.applyMatrix4(this._model.matrixWorld);
+
+    const raycaster = new THREE.Raycaster(start, dir);
+    raycaster.layers.set(1);
+
+    const intersects = raycaster.intersectObjects(this._scene.children);
+
+    if (intersects.length > 0) {
+      sensor.value = intersects[0].distance;
+      sensor.material.opacity = 1.0;
+    }
+    else {
+      sensor.value = undefined;
+      sensor.material.opacity = 0.2;
     }
   }
 
@@ -234,6 +257,10 @@ export class CharacterController {
 
 
   update(dt) {
+    if (!this._model) {
+      return;
+    }
+
     if (this._mixer) this._mixer.update(dt);
 
     const velocity = this._velocity;
@@ -249,27 +276,20 @@ export class CharacterController {
 
     const acc = this._acceleration.clone();
 
-    if (this._input && this._input.isJumpRequested()
-      && this._model
+    this._sensors.forEach(s => {
+      this._raycastFromSensor(s);
+    })
+
+    const sensorInput = this._sensors.map(s => s.value);
+    if (this._input && this._input.shouldJump(sensorInput)
       && this._model.position.y <= 0) {
       velocity.y += acc.y * dt;
       this._doJump();
     }
 
-    /*if (this._input._keys.left) {
-      velocity.x -= acc.x * dt;
-    }
-
-    if (this._input._keys.right) {
-      velocity.x += acc.x * dt;
-    }*/
-
     velocity.y -= this._gravity * dt;
-
-    if (this._model) {
-      this._model.position.add(velocity);
-      this._model.position.y = Math.max(0, this._model.position.y);
-    }
+    this._model.position.add(velocity);
+    this._model.position.y = Math.max(0, this._model.position.y);
   }
 
   _fadeToAction(name, duration) {

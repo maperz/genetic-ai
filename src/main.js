@@ -1,16 +1,21 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 import Stats from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/stats.module.js';
-import { CharacterController, HumanInputController, RandomInputController } from './character.js';
+import { CharacterController, HumanInputController } from './character.js';
+import { RandomInputController, SmarterInputController } from './ai.js';
 import { BoxController } from './box.js';
 import { Scoreboard } from './score.js';
 
 let container, stats, clock;
 let camera, scene, renderer;
 
+const populationSize = 10;
+const addHumanPlayer = false;
+
 const scoreboard = new Scoreboard();
 
 class IndividualRun {
   constructor(params) {
+    this._populationSize = params.populationSize;
     this._scene = params.scene;
     this._characters = [];
     this._scoreboard = params.scoreboard;
@@ -24,11 +29,18 @@ class IndividualRun {
     this._scoreboard.score = 0;
 
     this._characters = [];
-    this._characters.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
+    if (addHumanPlayer) {
+      this._characters.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
+    }
 
-    const num_agents = 10;
-    for (let i = 1; i <= num_agents; i++) {
-      this._characters.push(new CharacterController({ id: i, scene, opacity, input: new RandomInputController({ prob: 0.01 }) }));
+    for (let i = 1; i <= this._populationSize; i++) {
+
+      const random = new RandomInputController({ prob: 0.01 });
+      const smarter = new SmarterInputController();
+
+      const input = i % 3 == 1 ? smarter : random;
+
+      this._characters.push(new CharacterController({ id: i, scene, opacity: 0.2, input }));
     }
   }
 
@@ -67,25 +79,12 @@ class IndividualRun {
   }
 }
 
-
-
-init();
-
-const opacity = 0.2;
-
-const run = new IndividualRun({ scene, scoreboard });
-
-run.startNewRound();
-
-
-update();
-
 function init() {
-
   container = document.createElement('div');
   document.body.appendChild(container);
 
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 100);
+  camera.layers.enable(1);
 
   //camera.position.set(10, 10, 20);
   //camera.lookAt(new THREE.Vector3(10, 5, 0));
@@ -144,6 +143,7 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+
 function update() {
   const dt = clock.getDelta();
   stats.update();
@@ -154,3 +154,13 @@ function update() {
 
   requestAnimationFrame(update);
 }
+
+
+init();
+
+const run = new IndividualRun({ scene, scoreboard, populationSize });
+run.startNewRound();
+
+update();
+
+

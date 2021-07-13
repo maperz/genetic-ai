@@ -8,11 +8,11 @@ export class BoxController {
         this._cubes = [];
         this._cubeSpeed = 10;
         this._init();
+        this._spawnedCubes = 0;
     }
 
     _init() {
     }
-
 
     _spawnCube() {
         const size = 2;
@@ -25,12 +25,22 @@ export class BoxController {
 
         var cube = new THREE.Mesh(geom, material)
         cube.name = "cube";
+
         cube.position.y = size / 2;
         cube.position.x = 30;
+        
+        if (this._spawnedCubes % 3 == 1) {
+            cube.position.y = 8;
+        }
+
         cube.geometry.computeBoundingBox();
 
         this._scene.add(cube);
+        
+        cube.layers.set(1);
+
         this._cubes.push(cube);
+        this._spawnedCubes += 1;
     }
 
     update(dt) {
