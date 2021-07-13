@@ -1,4 +1,4 @@
-export class Scoreboard {
+export class InfoBoard {
 
     constructor() {
     }
@@ -14,10 +14,14 @@ export class Scoreboard {
 
         const score = document.createElement('div');
         score.style = "font-size: 30px; padding: 8px 16px; font-family: Arial, Helvetica, sans-serif;";
-
         dom.appendChild(score);
+        this._scoreDiv = score;
 
-        this._scoreBoard = score;
+        const alive = document.createElement('div');
+        alive.style = "font-size: 30px; padding: 8px 16px; font-family: Arial, Helvetica, sans-serif;";
+        dom.appendChild(alive);
+        this._aliveDiv = alive;
+
         this._dom = dom;
 
         this.score = 0;
@@ -25,11 +29,20 @@ export class Scoreboard {
 
     set score(val) {
         this._score = val;
-        this._scoreBoard.innerText = this._score.toFixed(2);
+        this._scoreDiv.innerText = this._score.toFixed(2);
     }
 
     get score() {
         return this._score;
+    }
+
+    set alive(val) {
+        this._alive = val;
+        this._aliveDiv.innerText = this._alive;
+    }
+
+    get alive() {
+        return this._alive;
     }
 
     get dom() {

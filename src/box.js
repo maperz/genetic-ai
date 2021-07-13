@@ -28,19 +28,19 @@ export class BoxController {
 
         cube.position.y = size / 2;
         cube.position.x = 30;
-        
-        if (this._spawnedCubes % 3 == 1) {
-            cube.position.y = 8;
-        }
-
-        cube.geometry.computeBoundingBox();
 
         this._scene.add(cube);
-        
+
+        //if (this._spawnedCubes % 3 == 1) {
+        //    cube.position.y = 8;
+        //}
+
+        cube.geometry.computeBoundingBox();
         cube.layers.set(1);
 
-        this._cubes.push(cube);
         this._spawnedCubes += 1;
+
+        this._cubes.push(cube);
     }
 
     update(dt) {
@@ -52,16 +52,22 @@ export class BoxController {
 
         const cubeChange = this._cubeSpeed * dt;
 
+        const deadCubes = [];
+
         for (let i = 0; i < this._cubes.length; i++) {
             const cube = this._cubes[i];
             cube.position.x -= cubeChange;
 
             if (cube.position.x < -100) {
-                this._cubes.splice(i, 1);
-                this._scene.remove(cube);
-                cube.geometry.dispose();
-                cube.material.dispose();
+                deadCubes.push(cube);
             }
+        }
+
+        for(let cube of deadCubes) {
+            this._cubes.splice(this._cubes.indexOf(cube), 1);
+            this._scene.remove(cube);
+            cube.geometry.dispose();
+            cube.material.dispose();
         }
     }
 
@@ -80,5 +86,6 @@ export class BoxController {
             cube.geometry.dispose();
             cube.material.dispose();
         }
+        this._cubes = [];
     }
 }

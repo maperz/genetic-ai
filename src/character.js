@@ -90,8 +90,8 @@ export class CharacterController {
     this._gravity = 0.75;
     this._opacity = params.opacity ?? 1.0;
 
-    this._decceleration = new THREE.Vector3(-2, -2, 0);
-    this._acceleration = new THREE.Vector3(1, 60, 0.0);
+    this._decceleration = new THREE.Vector3(0, -2, 0);
+    this._acceleration = new THREE.Vector3(0, 60, 0.0);
     this._sensors = [];
 
     this._headOffset = new THREE.Vector3(0, 3, 0);
@@ -264,6 +264,7 @@ export class CharacterController {
     if (this._mixer) this._mixer.update(dt);
 
     const velocity = this._velocity;
+
     const frameDecceleration = new THREE.Vector3(
       velocity.x * this._decceleration.x,
       velocity.y * this._decceleration.y,
@@ -283,7 +284,8 @@ export class CharacterController {
     const sensorInput = this._sensors.map(s => s.value);
     if (this._input && this._input.shouldJump(sensorInput)
       && this._model.position.y <= 0) {
-      velocity.y += acc.y * dt;
+      velocity.y += acc.y * 0.016;
+     //console.log(velocity.y, acc.y, dt);
       this._doJump();
     }
 

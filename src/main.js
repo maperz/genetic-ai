@@ -3,21 +3,24 @@ import Stats from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/
 import { CharacterController, HumanInputController } from './character.js';
 import { RandomInputController, SmarterInputController } from './ai.js';
 import { BoxController } from './box.js';
-import { Scoreboard } from './score.js';
+import { InfoBoard } from './info.js';
+
+import { Neuron, ExampleNeuralNetwork } from './ann.js';
+
 
 let container, stats, clock;
 let camera, scene, renderer;
 
-const populationSize = 10;
+const populationSize = 6;
 const addHumanPlayer = false;
 
-const scoreboard = new Scoreboard();
+const scoreboard = new InfoBoard();
 
 class IndividualRun {
   constructor(params) {
     this._populationSize = params.populationSize;
     this._scene = params.scene;
-    this._characters = [];
+    this._charactersAlive = [];
     this._scoreboard = params.scoreboard;
   }
 
@@ -28,9 +31,9 @@ class IndividualRun {
     this._boxController = new BoxController({ scene: this._scene });
     this._scoreboard.score = 0;
 
-    this._characters = [];
+    this._charactersAlive = [];
     if (addHumanPlayer) {
-      this._characters.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
+      this._charactersAlive.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
     }
 
     for (let i = 1; i <= this._populationSize; i++) {
@@ -40,8 +43,10 @@ class IndividualRun {
 
       const input = i % 3 == 1 ? smarter : random;
 
-      this._characters.push(new CharacterController({ id: i, scene, opacity: 0.2, input }));
+      this._charactersAlive.push(new CharacterController({ id: i, scene, opacity: 0.2, input }));
     }
+
+    this._scoreboard.alive = this._charactersAlive.length;
   }
 
   reset() {
@@ -49,33 +54,42 @@ class IndividualRun {
       this._boxController.remove();
     }
 
-    for (let i = 0; i < this._characters.length; i++) {
-      const character = this._characters[i];
+    for (let i = 0; i < this._charactersAlive.length; i++) {
+      const character = this._charactersAlive[i];
       character.remove();
     }
-    this._characters = [];
+
+    this._charactersAlive = [];
   }
 
   update(dt) {
-    this._characters.forEach((c) => c.update(dt));
+    this._charactersAlive.forEach((c) => c.update(dt));
     this._boxController.update(dt);
     this._scoreboard.score += dt;
 
     const boxes = this._boxController.getBoxes();
 
-    for (let i = 0; i < this._characters.length; i++) {
-      const character = this._characters[i];
+    const markedDeath = [];
 
+    for (let i = 0; i < this._charactersAlive.length; i++) {
+      const character = this._charactersAlive[i];
       if (character.checkIntersection(boxes)) {
-        console.log("Character hit box!");
-        character.remove();
-        this._characters.splice(i, 1);
+        markedDeath.push(character);
+      }
+    }
 
-        if (this._characters.length == 0) {
+    if (markedDeath.length > 0) {
+      console.log(markedDeath.length + " characters hit the box!");
+      for (let character of markedDeath) {
+        character.remove();
+        this._charactersAlive.splice(this._charactersAlive.indexOf(character), 1);
+        this._scoreboard.alive = this._charactersAlive.length;
+        if (this._charactersAlive.length == 0) {
           this.startNewRound();
         }
       }
     }
+   
   }
 }
 
@@ -94,6 +108,9 @@ function init() {
 
   //camera.position.set(0, 20, 0);
   //camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+  //camera.position.set(-10, 4, 0);
+  //camera.lookAt(new THREE.Vector3(4, 4, 0));
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xe0e0e0);
@@ -163,4 +180,22 @@ run.startNewRound();
 
 update();
 
+/*
+const a = new Neuron({inputs: [1], w: 0.2, b: 0.4});
+const b = new Neuron({inputs: [1], w: 0.1, b: 0.0});
+const c = new Neuron({inputs: [1], w: 0.5, b: 0.5});
 
+const r = new Neuron({inputs: [a, b, c], w: 1, b: 0});
+
+console.log(r.compute(1));
+
+b.setInputs([10]);
+
+console.log(r.compute(2));
+*/
+
+const genes = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+const ann = new ExampleNeuralNetwork({genes});
+ann.setSensorValues([1,0,0,0,0]);
+
+console.log(ann.compute(1));
