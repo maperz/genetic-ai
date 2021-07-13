@@ -11,7 +11,7 @@ export class Neuron {
     }
 
     activation(value) {
-        const t = 0.3;
+        const t = 0.1;
         return value > t ? value : undefined;
     }
 
@@ -44,27 +44,27 @@ export class ExampleNeuralNetwork {
         const hiddenSize = 3;
         const outputSize = 2;
 
-        const totalSize =  inputSize + hiddenSize + outputSize
-        if ((genes.length/2) != totalSize) {
-            throw new Error("Genes and layers missmatch! Unique genes: " + genes.length / 2+ " Layer size: " + totalSize);
+        const totalSize = inputSize + hiddenSize + outputSize
+        if ((genes.length / 2) != totalSize) {
+            throw new Error("Genes and layers missmatch! Unique genes: " + genes.length / 2 + " Layer size: " + totalSize);
         }
 
         const inputLayer = [];
-        for(let i = 0; i < inputSize; i++) {
+        for (let i = 0; i < inputSize; i++) {
             const index = i * 2;
-            inputLayer.push(new Neuron({inputs: [], w: genes[index], b: genes[index + 1]}));
+            inputLayer.push(new Neuron({ inputs: [], w: genes[index], b: genes[index + 1] }));
         }
 
         const hiddenLayer = [];
-        for(let i = 0; i < hiddenSize; i++) {
+        for (let i = 0; i < hiddenSize; i++) {
             const index = i * 2 + inputSize;
-            hiddenLayer.push(new Neuron({inputs: inputLayer, w: genes[index], b: genes[index + 1]}));
+            hiddenLayer.push(new Neuron({ inputs: inputLayer, w: genes[index], b: genes[index + 1] }));
         }
 
         const outputLayer = [];
-        for(let i = 0; i < outputSize; i++) {
+        for (let i = 0; i < outputSize; i++) {
             const index = i * 2 + inputSize + hiddenSize;
-            outputLayer.push(new Neuron({inputs: hiddenLayer, w: genes[index], b: genes[index + 1]}));
+            outputLayer.push(new Neuron({ inputs: hiddenLayer, w: genes[index], b: genes[index + 1] }));
         }
 
         this._inputLayer = inputLayer;
@@ -76,15 +76,16 @@ export class ExampleNeuralNetwork {
             throw new Error("Sensor value and input layer missmatch!");
         }
 
-        for(let i = 0; i < this._inputLayer.length; i++) {
+        for (let i = 0; i < this._inputLayer.length; i++) {
             const neuron = this._inputLayer[i];
             neuron.setInputs([sensorValues[i]]);
         }
-    } 
+    }
 
     compute(step) {
         const results = this._outputLayer.map(n => n.compute(step));
         let sum = results.reduce((a, b) => a + b, 0);
-        return results.map(r => r/sum);
+        return results.map(r => r / sum);
     }
 }
+

@@ -141,7 +141,7 @@ export class CharacterController {
     this._bbox = new THREE.Box3().setFromObject(this._model);
     this._bbox.expandByVector(new THREE.Vector3(-1, 0, -0.5));
 
-    this._addBoundingBoxMesh();
+    //this._addBoundingBoxMesh();
     this._addSensorsMesh();
 
     this._model.rotation.y = Math.PI / 2;
@@ -167,7 +167,7 @@ export class CharacterController {
     var start = new THREE.Vector3();
     start.addVectors(this._model.position, this._headOffset);
 
-    var distance = 20;
+    var distance = 50;
     var spread = 0.04;
     var angles = [-2 * spread * Math.PI, -1 * spread * Math.PI, 0 * spread * Math.PI, 1 * spread * Math.PI, 2 * spread * Math.PI];
 
@@ -212,11 +212,15 @@ export class CharacterController {
 
     if (intersects.length > 0) {
       sensor.value = intersects[0].distance;
-      sensor.material.opacity = 1.0;
+      if (sensor.material) {
+        sensor.material.opacity = 1.0;
+      }
     }
     else {
       sensor.value = undefined;
-      sensor.material.opacity = 0.2;
+      if (sensor.material) {
+        sensor.material.opacity = 0.2;
+      }
     }
   }
 

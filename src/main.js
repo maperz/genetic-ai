@@ -1,17 +1,17 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 import Stats from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/stats.module.js';
 import { CharacterController, HumanInputController } from './character.js';
-import { RandomInputController, SmarterInputController } from './ai.js';
+import { RandomInputController, SmarterInputController, ANNDrivenInputController } from './ai.js';
 import { BoxController } from './box.js';
 import { InfoBoard } from './info.js';
 
-import { Neuron, ExampleNeuralNetwork } from './ann.js';
-
+import { Neuron, ExampleNeuralNetwork,  } from './ann.js';
+import {generateGen} from './gene.js';
 
 let container, stats, clock;
 let camera, scene, renderer;
 
-const populationSize = 6;
+const populationSize = 10;
 const addHumanPlayer = false;
 
 const scoreboard = new InfoBoard();
@@ -22,6 +22,7 @@ class IndividualRun {
     this._scene = params.scene;
     this._charactersAlive = [];
     this._scoreboard = params.scoreboard;
+    this._genes = Array.from({ length: this._populationSize }, () => generateGen());
   }
 
   startNewRound() {
@@ -36,14 +37,16 @@ class IndividualRun {
       this._charactersAlive.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
     }
 
-    for (let i = 1; i <= this._populationSize; i++) {
+    for (let i = 0; i < this._populationSize; i++) {
 
+      /*
       const random = new RandomInputController({ prob: 0.01 });
       const smarter = new SmarterInputController();
-
       const input = i % 3 == 1 ? smarter : random;
+      */
+      const input = new ANNDrivenInputController({ genes: this._genes[i] });
 
-      this._charactersAlive.push(new CharacterController({ id: i, scene, opacity: 0.2, input }));
+      this._charactersAlive.push(new CharacterController({ id: i + 1, scene, opacity: 0.2, input }));
     }
 
     this._scoreboard.alive = this._charactersAlive.length;
@@ -89,7 +92,7 @@ class IndividualRun {
         }
       }
     }
-   
+
   }
 }
 
@@ -181,6 +184,8 @@ run.startNewRound();
 update();
 
 /*
+// Neuron Example
+
 const a = new Neuron({inputs: [1], w: 0.2, b: 0.4});
 const b = new Neuron({inputs: [1], w: 0.1, b: 0.0});
 const c = new Neuron({inputs: [1], w: 0.5, b: 0.5});
@@ -194,8 +199,18 @@ b.setInputs([10]);
 console.log(r.compute(2));
 */
 
-const genes = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-const ann = new ExampleNeuralNetwork({genes});
-ann.setSensorValues([1,0,0,0,0]);
 
+/*
+// ANN example
+
+const genes = Array.from({ length: 20 }, () => Math.random());
+// const genes = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+const ann = new ExampleNeuralNetwork({ genes });
+ann.setSensorValues([1, 0, 1, 0, 0]);
 console.log(ann.compute(1));
+ann.setSensorValues([0, 0, 1, 1, 0]);
+console.log(ann.compute(2));
+ann.setSensorValues([1, 0, 1, 1, 1]);
+console.log(ann.compute(3));
+*/

@@ -16,7 +16,13 @@ export class BoxController {
 
     _spawnCube() {
         const size = 2;
-        var geom = new THREE.BoxGeometry(size, size, size);
+        let width = 1;
+
+        if (Math.random() > 0.3) {
+            width = 1.5; 
+        }
+ 
+        var geom = new THREE.BoxGeometry(size * width, size, size);
         var material = new THREE.MeshPhongMaterial({
             color: new THREE.Color(0x1c1c1c),
             flatShading: true,
@@ -30,6 +36,7 @@ export class BoxController {
         cube.position.x = 30;
 
         this._scene.add(cube);
+
 
         //if (this._spawnedCubes % 3 == 1) {
         //    cube.position.y = 8;
