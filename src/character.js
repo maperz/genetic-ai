@@ -103,9 +103,16 @@ export class CharacterController {
 
     this._decceleration = new THREE.Vector3(-2, -2, 0);
     this._acceleration = new THREE.Vector3(1, 60, 0.0);
-    this._velocity = new THREE.Vector3(0, 0, 0);
 
     this._init();
+    this.reset();
+  }
+
+  reset() {
+    this._velocity = new THREE.Vector3(0, 0, 0);
+    if (this._model) {
+      this._model.y = 0;
+    }
   }
 
   _init() {
@@ -224,6 +231,7 @@ export class CharacterController {
 
     this._mixer.addEventListener('finished', restoreState);
   }
+
 
   update(dt) {
     if (this._mixer) this._mixer.update(dt);

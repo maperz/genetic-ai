@@ -9,20 +9,74 @@ let camera, scene, renderer;
 
 const scoreboard = new Scoreboard();
 
+class IndividualRun {
+  constructor(params) {
+    this._scene = params.scene;
+    this._characters = [];
+    this._scoreboard = params.scoreboard;
+  }
+
+  startNewRound() {
+    console.log("Starting new round");
+    this.reset();
+
+    this._boxController = new BoxController({ scene: this._scene });
+    this._scoreboard.score = 0;
+
+    this._characters = [];
+    this._characters.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
+
+    const num_agents = 10;
+    for (let i = 1; i <= num_agents; i++) {
+      this._characters.push(new CharacterController({ id: i, scene, opacity, input: new RandomInputController({ prob: 0.01 }) }));
+    }
+  }
+
+  reset() {
+    if (this._boxController) {
+      this._boxController.remove();
+    }
+
+    for (let i = 0; i < this._characters.length; i++) {
+      const character = this._characters[i];
+      character.remove();
+    }
+    this._characters = [];
+  }
+
+  update(dt) {
+    this._characters.forEach((c) => c.update(dt));
+    this._boxController.update(dt);
+    this._scoreboard.score += dt;
+
+    const boxes = this._boxController.getBoxes();
+
+    for (let i = 0; i < this._characters.length; i++) {
+      const character = this._characters[i];
+
+      if (character.checkIntersection(boxes)) {
+        console.log("Character hit box!");
+        character.remove();
+        this._characters.splice(i, 1);
+
+        if (this._characters.length == 0) {
+          this.startNewRound();
+        }
+      }
+    }
+  }
+}
+
+
+
 init();
 
 const opacity = 0.2;
 
-const characters = []
+const run = new IndividualRun({ scene, scoreboard });
 
-characters.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
+run.startNewRound();
 
-const num_agents = 10;
-for (let i = 1; i <= num_agents; i++) {
-  characters.push(new CharacterController({ id: i, scene, opacity, input: new RandomInputController({ prob: 0.01 }) }));
-}
-
-const boxController = new BoxController({ scene });
 
 update();
 
@@ -32,15 +86,15 @@ function init() {
   document.body.appendChild(container);
 
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 100);
-  
+
   //camera.position.set(10, 10, 20);
   //camera.lookAt(new THREE.Vector3(10, 5, 0));
 
-  // camera.position.set(0, 20, 0);
-  //camera.lookAt(new THREE.Vector3(0, 0, 0));
-
   camera.position.set(0, 4, 30);
   camera.lookAt(new THREE.Vector3(0, 4, 0));
+
+  //camera.position.set(0, 20, 0);
+  //camera.lookAt(new THREE.Vector3(0, 0, 0));
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xe0e0e0);
@@ -94,23 +148,9 @@ function update() {
   const dt = clock.getDelta();
   stats.update();
 
-  characters.forEach((c) => c.update(dt));
-  boxController.update(dt);
-
-  const boxes = boxController.getBoxes();
-
-  for (let i = 0; i < characters.length; i++) {
-    const character = characters[i];
-    if (character.checkIntersection(boxes)) {
-      console.log("Character hit box!");
-      character.remove();
-      characters.splice(i, 1);
-    }
-  }
+  run.update(dt);
 
   renderer.render(scene, camera);
-
-  scoreboard.score += dt;
 
   requestAnimationFrame(update);
 }

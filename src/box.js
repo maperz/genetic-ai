@@ -62,4 +62,13 @@ export class BoxController {
             return box;
         });
     }
+
+    remove() {
+        for (let i = 0; i < this._cubes.length; i++) {
+            const cube = this._cubes[i];
+            this._scene.remove(cube);
+            cube.geometry.dispose();
+            cube.material.dispose();
+        }
+    }
 }
