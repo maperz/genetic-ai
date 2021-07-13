@@ -1,6 +1,7 @@
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 
+
 export class HumanInputController {
   constructor() {
     this._Init();
@@ -81,6 +82,15 @@ export class RandomInputController {
   }
 };
 
+const staticAgentColors = [
+  new THREE.Color(1, 0, 0),
+  new THREE.Color(0, 1, 0),
+  new THREE.Color(0, 0, 1),
+  new THREE.Color(1, 1, 0),
+  new THREE.Color(0, 1, 1),
+  new THREE.Color(1, 0, 1),
+]
+
 export class CharacterController {
 
   constructor(params) {
@@ -92,7 +102,7 @@ export class CharacterController {
     this._opacity = params.opacity ?? 1.0;
 
     this._decceleration = new THREE.Vector3(-2, -2, 0);
-    this._acceleration = new THREE.Vector3(1, 50, 0.0);
+    this._acceleration = new THREE.Vector3(1, 60, 0.0);
     this._velocity = new THREE.Vector3(0, 0, 0);
 
     this._init();
@@ -104,34 +114,80 @@ export class CharacterController {
 
   _loadModel() {
     const loader = new GLTFLoader();
-    loader.load('resources/robot/RobotExpressive.glb', (gltf) => {
-      this._model = gltf.scene.children[0];
-      this._model.rotation.y = Math.PI / 2;
-      this._scene.add(this._model);
-      this._initActions(gltf.animations);
-      
-      this._model.traverse(n => { if ( n.isMesh && n.material ) {
+    loader.load('resources/robot/RobotExpressive.glb', (gltf) => this._onMeshLoaded(gltf), undefined, function (e) {
+      console.error(e);
+    });
+  }
+
+  _onMeshLoaded(gltf) {
+    this._model = gltf.scene;
+    this._scene.add(this._model);
+    this._initActions(gltf.animations);
+
+    this._color = staticAgentColors[(this._id - 1) % staticAgentColors.length] ?? new THREE.Color(0, 0, 0);
+
+    this._model.traverse(n => {
+      if (n.isMesh && n.material) {
         const mat = n.material;
         mat.transparent = true;
         mat.opacity = this._opacity;
 
-        const colors = [
-          new THREE.Color(1,0,0),
-          new THREE.Color(0,1,0),
-          new THREE.Color(0,0,1),
-          new THREE.Color(1,1,0),
-          new THREE.Color(0,1,1),
-          new THREE.Color(1,0,1),
-        ]
-
         if (this._id != 0) {
-          mat.color = colors[(this._id - 1) % colors.length];
+          mat.color = this._color;
+          mat.wireframe = true;
         }
-      }});
-
-    }, undefined, function (e) {
-      console.error(e);
+      }
     });
+
+    this._bbox = new THREE.Box3().setFromObject(this._model);
+    this._bbox.expandByVector(new THREE.Vector3(-1, 0, -0.5));
+
+    this._addBoundingBoxMesh();
+    this._addSensorsMesh();
+    this._model.rotation.y = Math.PI / 2;
+  }
+
+  _addBoundingBoxMesh() {
+    var dim = new THREE.Vector3();
+    dim.copy(this._bbox.max);
+    dim.sub(this._bbox.min);
+
+    var geometry = new THREE.BoxGeometry(dim.x, dim.y, dim.z);
+    var material = new THREE.MeshBasicMaterial({ color: this._color });
+    material.wireframe = true;
+    material.transparent = true;
+    material.opacity = 0.3;
+    var bboxMesh = new THREE.Mesh(geometry, material);
+    bboxMesh.position.y += dim.y / 2;
+
+    this._model.add(bboxMesh);
+  }
+
+  _addSensorsMesh() {
+    var headOffset = new THREE.Vector3(0, 3, 1);
+    var start = new THREE.Vector3();
+    start.addVectors(this._model.position, headOffset);
+
+    var material = new THREE.LineBasicMaterial({ color: this._color });
+    material.transparent = true;
+    material.opacity = 0.2;
+
+    var distance = 20;
+    var angles = [-Math.PI * 0.15, -Math.PI * 0.1, -Math.PI * 0.05, 0, Math.PI * 0.05, Math.PI * 0.1, Math.PI * 0.15];
+
+    for (let angle of angles) {
+      var direction = new THREE.Vector3(0, 0, 1);
+      direction.applyAxisAngle(new THREE.Vector3(1, 0, 0), angle);
+      direction.normalize();
+
+      var end = new THREE.Vector3();
+      end.addVectors(start, direction.multiplyScalar(distance));
+
+      var geometry = new THREE.Geometry();
+      geometry.vertices.push(start);
+      geometry.vertices.push(end);
+      this._model.add(new THREE.Line(geometry, material));
+    }
   }
 
   _initActions(animations) {
@@ -168,28 +224,6 @@ export class CharacterController {
 
     this._mixer.addEventListener('finished', restoreState);
   }
-/*
-  _addSensors() {
-    var headOffset = new THREE.Vector3(0, 3, 0);
-    var start = new THREE.Vector3();
-    start.addVectors(this._model.position, headOffset);
-
-    var distance = 20;
-    var direction = new THREE.Vector3(1, 0, 0);
-
-    var end = new THREE.Vector3();
-    end.addVectors(start, direction.multiplyScalar(distance));
-
-    var geometry = new THREE.Geometry();
-    geometry.vertices.push(start);
-    geometry.vertices.push(end);
-    var material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-    material.transparent = true;
-    material.opacity = 0.5;
-    var line = new THREE.Line(geometry, material);
-
-    this._scene.add(line);
-  }*/
 
   update(dt) {
     if (this._mixer) this._mixer.update(dt);
@@ -208,7 +242,7 @@ export class CharacterController {
     const acc = this._acceleration.clone();
 
     if (this._input && this._input.isJumpRequested()
-    && this._model
+      && this._model
       && this._model.position.y <= 0) {
       velocity.y += acc.y * dt;
       this._doJump();
@@ -244,6 +278,25 @@ export class CharacterController {
       .setEffectiveWeight(1)
       .fadeIn(duration)
       .play();
+  }
 
+  checkIntersection(others) {
+    if (!this._model) {
+      return;
+    }
+
+    const box = new THREE.Box3();
+    box.copy(this._bbox);
+    box.applyMatrix4(this._model.matrixWorld);
+
+    for (let other of others) {
+      if (box.intersectsBox(other)) {
+        return true;
+      }
+    }
+  }
+
+  remove() {
+    this._scene.remove(this._model);
   }
 }

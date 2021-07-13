@@ -25,8 +25,9 @@ export class BoxController {
 
         var cube = new THREE.Mesh(geom, material)
         cube.name = "cube";
-        cube.position.y = 1;
+        cube.position.y = size / 2;
         cube.position.x = 30;
+        cube.geometry.computeBoundingBox();
 
         this._scene.add(cube);
         this._cubes.push(cube);
@@ -44,6 +45,7 @@ export class BoxController {
         for (let i = 0; i < this._cubes.length; i++) {
             const cube = this._cubes[i];
             cube.position.x -= cubeChange;
+
             if (cube.position.x < -100) {
                 this._cubes.splice(i, 1);
                 this._scene.remove(cube);
@@ -51,5 +53,13 @@ export class BoxController {
                 cube.material.dispose();
             }
         }
+    }
+
+    getBoxes() {
+        return this._cubes.map(cube => {
+            const box = new THREE.Box3();
+            box.copy(cube.geometry.boundingBox).applyMatrix4(cube.matrixWorld);
+            return box;
+        });
     }
 }

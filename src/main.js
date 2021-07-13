@@ -15,9 +15,9 @@ const opacity = 0.2;
 
 const characters = []
 
-// characters.push(  new CharacterController({ id: 0, scene, input: new HumanInputController() }));
+characters.push(new CharacterController({ id: 0, scene, input: new HumanInputController() }));
 
-const num_agents = 6;
+const num_agents = 10;
 for (let i = 1; i <= num_agents; i++) {
   characters.push(new CharacterController({ id: i, scene, opacity, input: new RandomInputController({ prob: 0.01 }) }));
 }
@@ -32,8 +32,15 @@ function init() {
   document.body.appendChild(container);
 
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 100);
-  camera.position.set(10, 10, 20);
-  camera.lookAt(new THREE.Vector3(10, 5, 0));
+  
+  //camera.position.set(10, 10, 20);
+  //camera.lookAt(new THREE.Vector3(10, 5, 0));
+
+  // camera.position.set(0, 20, 0);
+  //camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+  camera.position.set(0, 4, 30);
+  camera.lookAt(new THREE.Vector3(0, 4, 0));
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xe0e0e0);
@@ -89,6 +96,17 @@ function update() {
 
   characters.forEach((c) => c.update(dt));
   boxController.update(dt);
+
+  const boxes = boxController.getBoxes();
+
+  for (let i = 0; i < characters.length; i++) {
+    const character = characters[i];
+    if (character.checkIntersection(boxes)) {
+      console.log("Character hit box!");
+      character.remove();
+      characters.splice(i, 1);
+    }
+  }
 
   renderer.render(scene, camera);
 
