@@ -33,5 +33,21 @@ export class ANNDrivenInputController {
        const result = this._ann.compute(this._stepCounter++);
        return result[0] > 0.5;
     }
-
 }
+
+
+/*
+// Neuron Example
+
+const a = new Neuron({inputs: [1], w: 0.2, b: 0.4});
+const b = new Neuron({inputs: [1], w: 0.1, b: 0.0});
+const c = new Neuron({inputs: [1], w: 0.5, b: 0.5});
+
+const r = new Neuron({inputs: [a, b, c], w: 1, b: 0});
+
+console.log(r.compute(1));
+
+b.setInputs([10]);
+
+console.log(r.compute(2));
+*/

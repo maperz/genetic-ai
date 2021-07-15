@@ -89,3 +89,17 @@ export class ExampleNeuralNetwork {
     }
 }
 
+/*
+// ANN example
+
+const genes = Array.from({ length: 20 }, () => Math.random());
+// const genes = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+const ann = new ExampleNeuralNetwork({ genes });
+ann.setSensorValues([1, 0, 1, 0, 0]);
+console.log(ann.compute(1));
+ann.setSensorValues([0, 0, 1, 1, 0]);
+console.log(ann.compute(2));
+ann.setSensorValues([1, 0, 1, 1, 1]);
+console.log(ann.compute(3));
+*/
