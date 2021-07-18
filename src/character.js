@@ -83,7 +83,8 @@ const staticAgentColors = [
 export class CharacterController {
 
   constructor(params) {
-    this._id = params.id;
+    this.id = params.id;
+    this._isHuman = params.isHuman;
     this._defaultState = "Running";
     this._input = params.input;
     this._scene = params.scene;
@@ -123,7 +124,7 @@ export class CharacterController {
     this._scene.add(this._model);
     this._initActions(gltf.animations);
 
-    this._color = staticAgentColors[(this._id - 1) % staticAgentColors.length] ?? new THREE.Color(0, 0, 0);
+    this._color = staticAgentColors[this.id % staticAgentColors.length] ?? new THREE.Color(0, 0, 0);
 
     this._model.traverse(n => {
       if (n.isMesh && n.material) {
@@ -131,7 +132,7 @@ export class CharacterController {
         mat.transparent = true;
         mat.opacity = this._opacity;
 
-        if (this._id != 0) {
+        if (!this._isHuman) {
           mat.color = this._color;
           mat.wireframe = true;
         }
@@ -169,7 +170,7 @@ export class CharacterController {
 
     var distance = 50;
     var spread = 0.04;
-    var angles = [-2 * spread * Math.PI, -1 * spread * Math.PI, 0 * spread * Math.PI, 1 * spread * Math.PI, 2 * spread * Math.PI];
+    var angles = [-2 * spread * Math.PI, 0 * spread * Math.PI, 2 * spread * Math.PI];
 
     for (let angle of angles) {
 

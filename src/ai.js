@@ -25,7 +25,7 @@ export class ANNDrivenInputController {
     constructor(params) {
         this._stepCounter = 0;
         this._genes = params.genes;
-        this._ann = new ExampleNeuralNetwork({ genes: this._genes });
+        this._ann = new ExampleNeuralNetwork({ genes: this._genes, sensors: 3  });
     }
 
     shouldJump(sensorInput) {

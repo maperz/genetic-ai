@@ -39,14 +39,15 @@ export class ExampleNeuralNetwork {
 
     constructor(params) {
         const genes = params.genes;
+        const sensors = params.sensors;
 
-        const inputSize = 5;
+        const inputSize = sensors;
         const hiddenSize = 3;
         const outputSize = 2;
 
         const totalSize = inputSize + hiddenSize + outputSize
-        if ((genes.length / 2) != totalSize) {
-            throw new Error("Genes and layers missmatch! Unique genes: " + genes.length / 2 + " Layer size: " + totalSize);
+        if ((genes.length / 2) < totalSize) {
+            throw new Error("Too few genes to initialise NN! Unique genes: " + genes.length / 2 + " Layer size: " + totalSize);
         }
 
         const inputLayer = [];
