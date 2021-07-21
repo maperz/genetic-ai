@@ -83,61 +83,67 @@ const staticAgentColors = [
 export class CharacterController {
 
   constructor(params) {
-    this.id = params.id;
-    this._isHuman = params.isHuman;
     this._defaultState = "Running";
-    this._input = params.input;
     this._scene = params.scene;
     this._gravity = 0.75;
     this._opacity = params.opacity ?? 1.0;
+    this._isInitialised = false;
 
-    this._decceleration = new THREE.Vector3(0, -2, 0);
-    this._acceleration = new THREE.Vector3(0, 60, 0.0);
     this._sensors = [];
 
     this._headOffset = new THREE.Vector3(0, 3, 0);
-
-    this._init();
-    this.reset();
   }
 
-  reset() {
-    this._velocity = new THREE.Vector3(0, 0, 0);
-    if (this._model) {
-      this._model.y = 0;
+  start(params) {
+    if (!this.isReady()) {
+      return;
     }
+
+    this._decceleration = new THREE.Vector3(0, -2, 0);
+    this._acceleration = new THREE.Vector3(0, 60, 0.0);
+    this._velocity = new THREE.Vector3(0, 0, 0);
+    this._model.y = 0;
+
+    this.id = params.id;
+    this._isHuman = params.isHuman;
+    this._input = params.input;
+
+    const color = staticAgentColors[this.id % staticAgentColors.length] ?? new THREE.Color(0, 0, 0);
+
+    this._setColor(color);
+
+    this._scene.add(this._model);
+    this._started = true;
   }
 
-  _init() {
-    this._loadModel();
+  stop() {
+    if (!this.isReady()) {
+      return;
+    }
+
+    this._started = false;
+    this._scene.remove(this._model);
   }
 
-  _loadModel() {
-    const loader = new GLTFLoader();
-    loader.load('resources/robot/RobotExpressive.glb', (gltf) => this._onMeshLoaded(gltf), undefined, function (e) {
-      console.error(e);
+  isReady() {
+    return this._isInitialised;
+  }
+
+  init() {
+    return new Promise((resolve, reject) => {
+      const loader = new GLTFLoader();
+      loader.load('resources/robot/RobotExpressive.glb', (gltf) => {
+        this._onMeshLoaded(gltf);
+        resolve();
+      }, undefined, (e) => {
+        reject(e);
+      });
     });
   }
 
   _onMeshLoaded(gltf) {
     this._model = gltf.scene;
-    this._scene.add(this._model);
     this._initActions(gltf.animations);
-
-    this._color = staticAgentColors[this.id % staticAgentColors.length] ?? new THREE.Color(0, 0, 0);
-
-    this._model.traverse(n => {
-      if (n.isMesh && n.material) {
-        const mat = n.material;
-        mat.transparent = true;
-        mat.opacity = this._opacity;
-
-        if (!this._isHuman) {
-          mat.color = this._color;
-          mat.wireframe = true;
-        }
-      }
-    });
 
     this._bbox = new THREE.Box3().setFromObject(this._model);
     this._bbox.expandByVector(new THREE.Vector3(-1, 0, -0.5));
@@ -146,6 +152,24 @@ export class CharacterController {
     this._addSensorsMesh();
 
     this._model.rotation.y = Math.PI / 2;
+    this._isInitialised = true;
+  }
+
+  _setColor(color) {
+    this._color = color;
+
+    this._model.traverse(n => {
+      if (n.isMesh && n.material) {
+        const mat = n.material;
+        mat.transparent = true;
+        mat.opacity = this._opacity;
+
+        if (!this._isHuman) {
+          mat.color = color;
+          mat.wireframe = true;
+        }
+      }
+    });
   }
 
   _addBoundingBoxMesh() {
@@ -174,7 +198,7 @@ export class CharacterController {
 
     for (let angle of angles) {
 
-      var material = new THREE.LineBasicMaterial({ color: this._color });
+      var material = new THREE.LineBasicMaterial({ color: new THREE.Color(1, 1, 1) });
       material.transparent = true;
       material.opacity = 0.2;
 
@@ -262,7 +286,7 @@ export class CharacterController {
 
 
   update(dt) {
-    if (!this._model) {
+    if (!this._started) {
       return;
     }
 
@@ -290,7 +314,7 @@ export class CharacterController {
     if (this._input && this._input.shouldJump(sensorInput)
       && this._model.position.y <= 0) {
       velocity.y += acc.y * 0.016;
-     //console.log(velocity.y, acc.y, dt);
+      //console.log(velocity.y, acc.y, dt);
       this._doJump();
     }
 
@@ -329,9 +353,5 @@ export class CharacterController {
         return true;
       }
     }
-  }
-
-  remove() {
-    this._scene.remove(this._model);
   }
 }

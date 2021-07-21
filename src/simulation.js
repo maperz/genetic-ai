@@ -6,15 +6,26 @@ import { generateGen } from './gene.js';
 export class IndividualRun {
     constructor(params) {
         this._populationSize = params.populationSize;
-        this._addHumanPlayer = params.humanplayer;
         this._scene = params.scene;
+
+        this._characters = [];
         this._charactersAlive = [];
         this._iteration = 0;
         this._scoreboard = params.scoreboard;
     }
 
+    init() {
+        for (let i = 0; i < this._populationSize; i++) {
+            const character = new CharacterController({ scene: this._scene, opacity: 0.2 });
+            this._characters.push(character);
+        }
+
+        return Promise.all(this._characters.map(c => c.init()));
+    }
+
     startNewRound() {
         this._iteration++;
+        this._isReady = false;
         console.log("Starting iteration: " + this._iteration);
         this._scoreboard.iteration = this._iteration;
         this.reset();
@@ -37,11 +48,10 @@ export class IndividualRun {
             const genes = this._curGen[i].genes;
             const input = new ANNDrivenInputController({ genes });
 
-            this._charactersAlive.push(new CharacterController({ id: i, scene: this._scene, opacity: 0.2, input }));
-        }
-
-        if (this._addHumanPlayer) {
-            this._charactersAlive.push(new CharacterController({ id: this._populationSize, scene, input: new HumanInputController(), isHuman: true }));
+            const character = this._characters[i];
+            this._charactersAlive.push(character);
+            
+            character.start({id: i, input});
         }
 
         this._scoreboard.alive = this._charactersAlive.length;
@@ -53,7 +63,7 @@ export class IndividualRun {
         }
 
         prev.sort((a, b) => a.score >= b.score);
-        
+
         // TODO: Generate based on the prev score a new population
 
         return Array.from({ length: this._populationSize }, () => ({ genes: generateGen(), score: 0 }));
@@ -72,7 +82,30 @@ export class IndividualRun {
         this._charactersAlive = [];
     }
 
+    isReady() {
+        if (this._charactersAlive.length == 0) {
+            return false;
+        }
+
+        if (this._isReady == true) {
+            return true;
+        }
+
+        for (let i = 0; i < this._charactersAlive.length; i++) {
+            const character = this._charactersAlive[i];
+            if (!character.isReady()) {
+                return false;
+            }
+        }
+        this._isReady = true;
+        return true;
+    }
+
     update(dt) {
+        if (!this.isReady()) {
+            return;
+        }
+
         this._charactersAlive.forEach((c) => c.update(dt));
         this._boxController.update(dt);
         this._scoreboard.score += dt;
@@ -91,7 +124,7 @@ export class IndividualRun {
         if (markedDeath.length > 0) {
             //console.log(markedDeath.length + " characters hit the box!");
             for (let character of markedDeath) {
-                character.remove();
+                character.stop();
 
                 if (!character.isHuman) {
                     this._curGen[character.id].score = this._scoreboard.score;
@@ -99,9 +132,10 @@ export class IndividualRun {
 
                 this._charactersAlive.splice(this._charactersAlive.indexOf(character), 1);
                 this._scoreboard.alive = this._charactersAlive.length;
-                if (this._charactersAlive.length == 0) {
-                    this.startNewRound();
-                }
+            }
+
+            if (this._charactersAlive.length == 0) {
+                this.startNewRound();
             }
         }
 

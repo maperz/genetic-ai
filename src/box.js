@@ -35,8 +35,7 @@ export class BoxController {
         cube.position.y = size / 2;
         cube.position.x = 30;
 
-        this._scene.add(cube);
-
+        cube.updateMatrixWorld(true);
 
         //if (this._spawnedCubes % 3 == 1) {
         //    cube.position.y = 8;
@@ -48,6 +47,7 @@ export class BoxController {
         this._spawnedCubes += 1;
 
         this._cubes.push(cube);
+        this._scene.add(cube);
     }
 
     update(dt) {

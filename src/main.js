@@ -8,12 +8,7 @@ const populationSize = 10;
 const addHumanPlayer = false;
 
 class Program {
-
-  constructor() {
-    this._init();
-  }
-
-  _init() {
+  async init() {
     const container = document.createElement('div');
     document.body.appendChild(container);
 
@@ -65,7 +60,7 @@ class Program {
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
-    window.addEventListener('resize', this._onWindowResize);
+    window.addEventListener('resize', this._onWindowResize.bind(this));
 
     // stats
     const stats = new Stats();
@@ -81,6 +76,8 @@ class Program {
 
     this._scoreboard = scoreboard;
     this._simulation = new IndividualRun({ scene, scoreboard, populationSize, humanplayer: addHumanPlayer });
+    await this._simulation.init();
+
     this._simulation.startNewRound();
   }
 
@@ -88,9 +85,8 @@ class Program {
     const dt = this._clock.getDelta();
     this._stats.update();
 
-    this._simulation.update(dt);
-
     this._renderer.render(this._scene, this._camera);
+    this._simulation.update(dt);
   }
 
   _onWindowResize() {
@@ -100,10 +96,22 @@ class Program {
   }
 }
 
-const program = new Program();
-function loop() {
-  program.update();
-  requestAnimationFrame(loop);
+
+async function main() {
+  const program = new Program();
+
+  const loop = () => {
+    program.update();
+    requestAnimationFrame(loop);
+  }
+
+  await program.init();
+  loop();
 }
 
-loop();
+main();
+
+
+
+
+
