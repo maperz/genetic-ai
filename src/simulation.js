@@ -1,7 +1,8 @@
 import { CharacterController, HumanInputController } from './character.js';
 import { RandomInputController, SmarterInputController, ANNDrivenInputController } from './ai.js';
 import { BoxController } from './box.js';
-import { generateGen } from './gene.js';
+import { generateGen, crossGens, mutateGen } from './gene.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 
 export class IndividualRun {
     constructor(params) {
@@ -50,8 +51,9 @@ export class IndividualRun {
 
             const character = this._characters[i];
             this._charactersAlive.push(character);
-            
-            character.start({id: i, input});
+
+            const color = new THREE.Color(genes[20], genes[21], genes[22]);
+            character.start({ id: i, input, color });
         }
 
         this._scoreboard.alive = this._charactersAlive.length;
@@ -62,11 +64,35 @@ export class IndividualRun {
             return Array.from({ length: this._populationSize }, () => ({ genes: generateGen(), score: 0 }));
         }
 
-        prev.sort((a, b) => a.score >= b.score);
+        prev.sort((a, b) => {
+            return a.score >= b.score ? -1 : 1;
+        });
 
-        // TODO: Generate based on the prev score a new population
+        const nextGen = [];
 
-        return Array.from({ length: this._populationSize }, () => ({ genes: generateGen(), score: 0 }));
+        const numParentGenes = 4;
+        for (let i = 0; i < numParentGenes; i++) {
+            nextGen.push(prev[i].genes);
+        }
+
+        let i = 0;
+        while (nextGen.length < this._populationSize) {
+            const x = Math.floor(i / numParentGenes) % numParentGenes;
+            const y = i % numParentGenes;
+            i++;
+
+            if (x == y) {
+                continue;
+            }
+
+            const a = prev[x].genes;
+            const b = prev[y].genes;
+            const mixed = crossGens(a, b);
+            const mutated = mutateGen(mixed);
+            nextGen.push(mutated);
+        }
+
+        return nextGen.map(genes => ({ genes, score: 0 }));
     }
 
     reset() {
@@ -76,7 +102,7 @@ export class IndividualRun {
 
         for (let i = 0; i < this._charactersAlive.length; i++) {
             const character = this._charactersAlive[i];
-            character.remove();
+            character.stop();
         }
 
         this._charactersAlive = [];
@@ -116,6 +142,11 @@ export class IndividualRun {
 
         for (let i = 0; i < this._charactersAlive.length; i++) {
             const character = this._charactersAlive[i];
+            
+            if (!character.isHuman) {
+                this._curGen[character.id].score = this._scoreboard.score;
+            }
+
             if (character.checkIntersection(boxes)) {
                 markedDeath.push(character);
             }
@@ -126,10 +157,6 @@ export class IndividualRun {
             for (let character of markedDeath) {
                 character.stop();
 
-                if (!character.isHuman) {
-                    this._curGen[character.id].score = this._scoreboard.score;
-                }
-
                 this._charactersAlive.splice(this._charactersAlive.indexOf(character), 1);
                 this._scoreboard.alive = this._charactersAlive.length;
             }
@@ -139,6 +166,9 @@ export class IndividualRun {
             }
         }
 
+        if (this._scoreboard.score > 6) {
+            this.startNewRound();
+        }
     }
 }
 

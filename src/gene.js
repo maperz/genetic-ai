@@ -1,5 +1,6 @@
-export function generateGen(length = 10) {
-    return Array.from({ length: length * 2 }, () => Math.random());
+// Length of 23: 10 Neurons * 2 (w and b) + 3 for RGB
+export function generateGen(length = 23) {
+    return Array.from({ length }, () => Math.random());
 }
 
 export function crossGens(a, b) {
@@ -10,7 +11,7 @@ export function crossGens(a, b) {
     return result;
 }
 
-export function mutate(gene, chance = 0.001) {
+export function mutateGen(gene, chance = 0.05) {
     const p = 1 - chance;
     return gene.map(g => Math.random() >= p ? Math.random() : g);
 }

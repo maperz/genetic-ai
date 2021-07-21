@@ -71,15 +71,6 @@ export class HumanInputController {
   }
 };
 
-const staticAgentColors = [
-  new THREE.Color(1, 0, 0),
-  new THREE.Color(0, 1, 0),
-  new THREE.Color(0, 0, 1),
-  new THREE.Color(1, 1, 0),
-  new THREE.Color(0, 1, 1),
-  new THREE.Color(1, 0, 1),
-]
-
 export class CharacterController {
 
   constructor(params) {
@@ -95,7 +86,7 @@ export class CharacterController {
   }
 
   start(params) {
-    if (!this.isReady()) {
+    if (!this.isReady() || this._started) {
       return;
     }
 
@@ -108,16 +99,16 @@ export class CharacterController {
     this._isHuman = params.isHuman;
     this._input = params.input;
 
-    const color = staticAgentColors[this.id % staticAgentColors.length] ?? new THREE.Color(0, 0, 0);
-
+    const color = params.color;
     this._setColor(color);
 
     this._scene.add(this._model);
+    this._startDefaultAction();
     this._started = true;
   }
 
   stop() {
-    if (!this.isReady()) {
+    if (!this.isReady() || !this._started) {
       return;
     }
 
@@ -268,6 +259,10 @@ export class CharacterController {
       }
     }
 
+    this._startDefaultAction();
+  }
+
+  _startDefaultAction() {
     this._activeAction = this._actions[this._defaultState];
     this._activeAction.startAt(Math.random() * 0.5);
     this._activeAction.play();
