@@ -1,11 +1,9 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
 import Stats from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/stats.module.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.116.0/examples/jsm/controls/OrbitControls.js'
+import { GUI } from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/dat.gui.module.js'
 import { IndividualRun } from './simulation.js';
 import { InfoBoard } from './info.js';
-
-// Config;
-const populationSize = 10;
-const addHumanPlayer = false;
 
 class Program {
   async init() {
@@ -33,7 +31,38 @@ class Program {
 
     this._clock = new THREE.Clock();
 
-    // lights
+    // Settings and GUI
+
+    const params = {
+      populationSize: 50,
+      addHumanPlayer: false,
+      runtime: {
+        successTime: 10,
+      }
+    };
+
+    const scoreModel = {
+      alive: 0,
+      score: 0,
+      iteration: 0
+    };
+
+    const gui = new GUI();
+    const staticSettings = gui.addFolder('Static Settings');
+    staticSettings.add(params, 'populationSize', 0, 200).name("Population Size");
+    staticSettings.open();
+
+    const trainingInfo = gui.addFolder('Training Info');
+    trainingInfo.add(scoreModel, 'score').name("Score").step(0.1).listen();
+    trainingInfo.add(scoreModel, 'iteration').name("Iteration").listen();
+    trainingInfo.add(scoreModel, 'alive').name("Alive").listen();
+    trainingInfo.open();
+
+    const trainingSettings = gui.addFolder('Training Settings');
+    trainingSettings.add(params.runtime, 'successTime', 0, 25, 0.1).name("Success time");
+    trainingSettings.open();
+
+    // Lightning
 
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
     hemiLight.position.set(0, 20, 0);
@@ -43,7 +72,7 @@ class Program {
     dirLight.position.set(0, 20, 10);
     scene.add(dirLight);
 
-    // ground
+    // Ground mesh
 
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
     mesh.rotation.x = - Math.PI / 2;
@@ -60,13 +89,18 @@ class Program {
     renderer.outputEncoding = THREE.sRGBEncoding;
     container.appendChild(renderer.domElement);
 
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.update();
+    controls.minZoom = 1.0;
+    controls.maxZoom = 5;
+    this._cameraControls = controls;
+
     window.addEventListener('resize', this._onWindowResize.bind(this));
 
-    // stats
+    // Stats and scoreboard
     const stats = new Stats();
-    const scoreboard = new InfoBoard();
+    const scoreboard = new InfoBoard(scoreModel);
 
-    container.appendChild(scoreboard.dom);
     container.appendChild(stats.dom);
 
     this._scene = scene;
@@ -75,9 +109,8 @@ class Program {
     this._stats = stats;
 
     this._scoreboard = scoreboard;
-    this._simulation = new IndividualRun({ scene, scoreboard, populationSize, humanplayer: addHumanPlayer });
+    this._simulation = new IndividualRun({ scene, scoreboard, ...params });
     await this._simulation.init();
-
     this._simulation.startNewRound();
   }
 
@@ -85,6 +118,7 @@ class Program {
     const dt = this._clock.getDelta();
     this._stats.update();
 
+    this._cameraControls.update();
     this._renderer.render(this._scene, this._camera);
     this._simulation.update(dt);
   }

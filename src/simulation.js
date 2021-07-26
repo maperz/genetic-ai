@@ -13,6 +13,7 @@ export class IndividualRun {
         this._charactersAlive = [];
         this._iteration = 0;
         this._scoreboard = params.scoreboard;
+        this._runtimeParams = params.runtime;
     }
 
     init() {
@@ -52,7 +53,10 @@ export class IndividualRun {
             const character = this._characters[i];
             this._charactersAlive.push(character);
 
-            const color = new THREE.Color(genes[20], genes[21], genes[22]);
+            const colorVector = new THREE.Vector3(genes[20] * genes[20], genes[21] * genes[21], genes[22] * genes[22]);
+            colorVector.normalize();
+
+            const color = new THREE.Color(colorVector.x, colorVector.y, colorVector.z);
             character.start({ id: i, input, color });
         }
 
@@ -166,7 +170,7 @@ export class IndividualRun {
             }
         }
 
-        if (this._scoreboard.score > 6) {
+        if (this._scoreboard.score >= this._runtimeParams.successTime) {
             this.startNewRound();
         }
     }
