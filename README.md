@@ -2,7 +2,7 @@
 
 > Genetic AI experiment letting agents learn to jump in 3D. Genes control the sensors direction and weights which influence when the agents decide to jump.
 
-<a href="https://maperz.github.io/genetic-ai">Click here to test it out!</a>
+<a href="https://maperz.github.io/genetic-ai">Click here to play with it!</a>
 <p align="center">
   <img src="./screenshots/demo-01.png">
 </p>
