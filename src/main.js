@@ -44,7 +44,7 @@ class Program {
     const scoreModel = {
       alive: 0,
       score: 0,
-      iteration: 0
+      generation: 0
     };
 
     const gui = new GUI();
@@ -54,7 +54,7 @@ class Program {
 
     const trainingInfo = gui.addFolder('Training Info');
     trainingInfo.add(scoreModel, 'score').name("Score").step(0.1).listen();
-    trainingInfo.add(scoreModel, 'iteration').name("Iteration").listen();
+    trainingInfo.add(scoreModel, 'generation').name("Generation").listen();
     trainingInfo.add(scoreModel, 'alive').name("Alive").listen();
     trainingInfo.open();
 

@@ -4,7 +4,7 @@ export class InfoBoard {
         this._model = model;
         this.score = 0;
         this.alive = 0;
-        this.iteration = 0;
+        this.generation = 0;
     }
     
     set score(val) {
@@ -23,11 +23,11 @@ export class InfoBoard {
         return this._model.alive;
     }
 
-    set iteration(val) {
-        this._model.iteration = val;
+    set generation(val) {
+        this._model.generation = val;
     }
 
-    get iteration() {
-        return this._model.iteration;
+    get generation() {
+        return this._model.generation;
     }
 }

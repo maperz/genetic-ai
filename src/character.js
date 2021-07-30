@@ -123,7 +123,7 @@ export class CharacterController {
   init() {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
-      loader.load('resources/robot/RobotExpressive.glb', (gltf) => {
+      loader.load('models/robot.glb', (gltf) => {
         this._onMeshLoaded(gltf);
         resolve();
       }, undefined, (e) => {

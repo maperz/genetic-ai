@@ -11,7 +11,7 @@ export class IndividualRun {
 
         this._characters = [];
         this._charactersAlive = [];
-        this._iteration = 0;
+        this._generation = 0;
         this._scoreboard = params.scoreboard;
         this._runtimeParams = params.runtime;
     }
@@ -26,10 +26,10 @@ export class IndividualRun {
     }
 
     startNewRound() {
-        this._iteration++;
+        this._generation++;
         this._isReady = false;
-        console.log("Starting iteration: " + this._iteration);
-        this._scoreboard.iteration = this._iteration;
+        console.log("Starting generation: " + this._generation);
+        this._scoreboard.generation = this._generation;
         this.reset();
 
         this._prevGen = this._curGen;
