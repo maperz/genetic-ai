@@ -1,16 +1,22 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
-import Stats from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/stats.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.116.0/examples/jsm/controls/OrbitControls.js'
-import { GUI } from 'https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/dat.gui.module.js'
-import { IndividualRun } from './simulation.js';
-import { InfoBoard } from './info.js';
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js";
+import Stats from "https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/stats.module.js";
+import { OrbitControls } from "https://unpkg.com/three@0.116.0/examples/jsm/controls/OrbitControls.js";
+import { GUI } from "https://cdn.jsdelivr.net/npm/three@0.130.1/examples/jsm/libs/dat.gui.module.js";
+import { Simulation } from "./simulation.js";
+import { InfoBoard } from "./info.js";
+import { Graph } from "./graph.js";
 
 class Program {
   async init() {
-    const container = document.createElement('div');
+    const container = document.createElement("div");
     document.body.appendChild(container);
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.25, 100);
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight,
+      0.25,
+      100
+    );
     camera.layers.enable(1);
 
     //camera.position.set(10, 10, 20);
@@ -33,33 +39,39 @@ class Program {
 
     // Settings and GUI
 
+    const graph = new Graph();
+
     const params = {
       populationSize: 50,
       addHumanPlayer: false,
       runtime: {
-        successTime: 10,
-      }
+        successTime: 6,
+      },
     };
 
     const scoreModel = {
       alive: 0,
       score: 0,
-      generation: 0
+      generation: 0,
     };
 
     const gui = new GUI();
-    const staticSettings = gui.addFolder('Static Settings');
-    staticSettings.add(params, 'populationSize', 0, 200).name("Population Size");
+    const staticSettings = gui.addFolder("Static Settings");
+    staticSettings
+      .add(params, "populationSize", 0, 200)
+      .name("Population Size");
     staticSettings.open();
 
-    const trainingInfo = gui.addFolder('Training Info');
-    trainingInfo.add(scoreModel, 'score').name("Score").step(0.1).listen();
-    trainingInfo.add(scoreModel, 'generation').name("Generation").listen();
-    trainingInfo.add(scoreModel, 'alive').name("Alive").listen();
+    const trainingInfo = gui.addFolder("Training Info");
+    trainingInfo.add(scoreModel, "score").name("Score").step(0.1).listen();
+    trainingInfo.add(scoreModel, "generation").name("Generation").listen();
+    trainingInfo.add(scoreModel, "alive").name("Alive").listen();
     trainingInfo.open();
 
-    const trainingSettings = gui.addFolder('Training Settings');
-    trainingSettings.add(params.runtime, 'successTime', 0, 25, 0.1).name("Success time");
+    const trainingSettings = gui.addFolder("Training Settings");
+    trainingSettings
+      .add(params.runtime, "successTime", 0, 25, 0.1)
+      .name("Success time");
     trainingSettings.open();
 
     // Lightning
@@ -74,8 +86,11 @@ class Program {
 
     // Ground mesh
 
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false }));
-    mesh.rotation.x = - Math.PI / 2;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(2000, 2000),
+      new THREE.MeshPhongMaterial({ color: 0x999999, depthWrite: false })
+    );
+    mesh.rotation.x = -Math.PI / 2;
     scene.add(mesh);
 
     const grid = new THREE.GridHelper(200, 40, 0x000000, 0x000000);
@@ -95,13 +110,13 @@ class Program {
     controls.maxZoom = 5;
     this._cameraControls = controls;
 
-    window.addEventListener('resize', this._onWindowResize.bind(this));
+    window.addEventListener("resize", this._onWindowResize.bind(this));
 
     // Stats and scoreboard
     const stats = new Stats();
-    const scoreboard = new InfoBoard(scoreModel);
-
     container.appendChild(stats.dom);
+
+    const scoreboard = new InfoBoard(scoreModel);
 
     this._scene = scene;
     this._camera = camera;
@@ -109,7 +124,7 @@ class Program {
     this._stats = stats;
 
     this._scoreboard = scoreboard;
-    this._simulation = new IndividualRun({ scene, scoreboard, ...params });
+    this._simulation = new Simulation({ scene, scoreboard, graph, ...params });
     await this._simulation.init();
     this._simulation.startNewRound();
   }
@@ -130,22 +145,16 @@ class Program {
   }
 }
 
-
 async function main() {
   const program = new Program();
 
   const loop = () => {
     program.update();
     requestAnimationFrame(loop);
-  }
+  };
 
   await program.init();
   loop();
 }
 
 main();
-
-
-
-
-
